@@ -6,10 +6,6 @@ import numpy as np
 import ioh
 from ioh import get_problem, logger, ProblemClass
 
-# budget = 5000
-# pop_size = 3
-# mutation_rate = 0.02
-# crossover_probability = 0.5
 
 
 # To make your results reproducible (not required by the assignment), you could set the random seed by
