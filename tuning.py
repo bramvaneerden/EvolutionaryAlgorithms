@@ -10,7 +10,7 @@ from GA import studentnumber1_studentnumber2_GA, create_problem
 budget = 1000000
 
 # To make your results reproducible (not required by the assignment), you could set the random seed by
-# `np.random.seed(some integer, e.g., 42)`
+np.random.seed(42)
 
 # Hyperparameters to tune, e.g.
 hyperparameter_space = {
