@@ -12,13 +12,13 @@ budget = 1000000
 # To make your results reproducible (not required by the assignment), you could set the random seed by
 np.random.seed(42)
 
-def tune_hyperparameters(n_trials: int = 3, evaluations_per_trial: int = 1000) -> tuple[int, float, float, float]:
+def tune_hyperparameters(n_trials: int = 2, evaluations_per_trial: int = 1000) -> tuple[int, float, float, float]:
 
     hyperparameter_space = {
-        "population_size": [50, 100, 200],
-        "mutation_rate": [0.01, 0.05, 0.1],
+        "population_size": [20, 40, 80],
+        "mutation_rate": [0.02, 0.05, 0.08],
         "crossover_rate": [0.5, 0.7, 0.9],
-        "decay": [0.95, 0.975, 0.99]
+        "decay": [0.85, 0.9, 0.95]
     }
     
     best_score = float('-inf')
@@ -66,7 +66,7 @@ def tune_hyperparameters(n_trials: int = 3, evaluations_per_trial: int = 1000) -
                     avg_f23 = np.mean(f23_scores)
                     
                     # combined
-                    normalized_score = (avg_f18 / 50.0) + (avg_f23 / 49.0)
+                    normalized_score = (avg_f18 / 10) + (avg_f23 / 7)
                     
                     print(f"  Results - F18 avg: {avg_f18:.2f}, F23 avg: {avg_f23:.2f}")
                     print(f"  Combined score: {normalized_score:.4f}")
