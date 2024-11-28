@@ -12,39 +12,79 @@ budget = 1000000
 # To make your results reproducible (not required by the assignment), you could set the random seed by
 np.random.seed(42)
 
-# Hyperparameters to tune, e.g.
-hyperparameter_space = {
-    "population_size": [50, 100, 200],
-    "mutation_rate": [0.01, 0.05, 0.1],
-    "crossover_rate": [0.5, 0.7, 0.9]
-}
+def tune_hyperparameters(n_trials: int = 3, evaluations_per_trial: int = 1000) -> tuple[int, float, float, float]:
 
-# Hyperparameter tuning function
-def tune_hyperparameters() -> List:
-    # You should decide/engineer the `score` youself, which is the tuning objective
-    best_score = float('inf')
+    hyperparameter_space = {
+        "population_size": [50, 100, 200],
+        "mutation_rate": [0.01, 0.05, 0.1],
+        "crossover_rate": [0.5, 0.7, 0.9],
+        "decay": [0.95, 0.975, 0.99]
+    }
+    
+    best_score = float('-inf')
     best_params = None
-    # create the LABS problem and the data logger
-    F18, _logger = create_problem(dimension=50, fid=18)
-    # create the N-Queens problem and the data logger
-    F23, _logger = create_problem(dimension=49, fid=23)
+    
+    total_configs = (len(hyperparameter_space['population_size']) * 
+                    len(hyperparameter_space['mutation_rate']) * 
+                    len(hyperparameter_space['crossover_rate']) *
+                    len(hyperparameter_space['decay']))
+                    
+    print(f"Total configurations to test: {total_configs}")
+    print(f"Trials per configuration: {n_trials}")
+    
+    config_counter = 0
     
     for pop_size in hyperparameter_space['population_size']:
-        for mutation_rate in hyperparameter_space['mutation_rate']:
-            for crossover_rate in hyperparameter_space['crossover_rate']:
-                # You should initialize you GA implementation with a hyperparameter setting
-                # and execute it on both problems F18, and F23
-                # please decide how many function evaluations you wish to use for running the GA
-                # on each problem per each hyperparameter setting
-                #......
-                pass
-
+        for mut_rate in hyperparameter_space['mutation_rate']:
+            for cross_rate in hyperparameter_space['crossover_rate']:
+                for decay in hyperparameter_space['decay']:
+                    config_counter += 1
+                    print(f"\nTesting configuration {config_counter}/{total_configs}")
+                    print(f"Parameters: pop={pop_size}, mut={mut_rate}, cross={cross_rate}, decay={decay}")
+                    
+                    f18_scores = []
+                    f23_scores = []
+                    
+                    for trial in range(n_trials):
+                        print(f"  Trial {trial + 1}/{n_trials}")
+                        
+                        #F18
+                        F18, _ = create_problem(dimension=50, fid=18)
+                        f18_result, _ = studentnumber1_studentnumber2_GA(
+                            F18, pop_size, mut_rate, cross_rate, decay
+                        )
+                        f18_scores.append(f18_result)
+                        
+                        #F23
+                        F23, _ = create_problem(dimension=49, fid=23)
+                        f23_result, _ = studentnumber1_studentnumber2_GA(
+                            F23, pop_size, mut_rate, cross_rate, decay
+                        )
+                        f23_scores.append(f23_result)
+                    
+                    avg_f18 = np.mean(f18_scores)
+                    avg_f23 = np.mean(f23_scores)
+                    
+                    # combined
+                    normalized_score = (avg_f18 / 50.0) + (avg_f23 / 49.0)
+                    
+                    print(f"  Results - F18 avg: {avg_f18:.2f}, F23 avg: {avg_f23:.2f}")
+                    print(f"  Combined score: {normalized_score:.4f}")
+                    
+                    if normalized_score > best_score:
+                        best_score = normalized_score
+                        best_params = (pop_size, mut_rate, cross_rate, decay)
+                        print(f"  New best parameters found! Score: {best_score:.4f}")
+    
+    if best_params is None:
+        return (100, 0.05, 0.7, 0.975)          
     return best_params
 
-
 if __name__ == "__main__":
-    # Hyperparameter tuning to determine the best parameters for both problems
-    population_size, mutation_rate, crossover_rate = tune_hyperparameters()
-    print(population_size)
-    print(mutation_rate)
-    print(crossover_rate)
+    print("Starting hyperparameter tuning...")
+    pop_size, mut_rate, cross_rate, decay = tune_hyperparameters()
+    print("\nBest parameters found:")
+    print(f"Population size: {pop_size}")
+    print(f"Mutation rate: {mut_rate}")
+    print(f"Crossover rate: {cross_rate}")
+    print(f"Decay rate: {decay}")

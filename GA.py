@@ -76,6 +76,10 @@ def pmx_crossover(p1, p2, crossover_rate):
     
     return p1, p2
 
+def get_mutation_rate(current_rate, current_iter, decay):
+    min_rate = 0.001
+    new_rate = current_rate * ( decay ** current_iter)
+    return max(new_rate, min_rate)
 
 def mutation(p, mutation_rate):
     for i in range(len(p)) :
@@ -90,7 +94,7 @@ def crossover(p1, p2, crossover_probability):
                 p1[i] = p2[i]
                 p2[i] = t
 
-def studentnumber1_studentnumber2_GA(problem: ioh.problem.PBO, pop_size, mutation_rate, crossover_rate) -> None:
+def studentnumber1_studentnumber2_GA(problem: ioh.problem.PBO, pop_size, mutation_rate, crossover_rate, decay) -> None:
     # initial_pop = ... make sure you randomly create the first population
     # print(problem)
     budget = 5000
@@ -99,12 +103,17 @@ def studentnumber1_studentnumber2_GA(problem: ioh.problem.PBO, pop_size, mutatio
     x_opt = None
     parent = []
     parent_f = []
+    current_iter = 0
+
     if problem.meta_data.name == 'NQueens':
         for i in range(pop_size):
             parent.append(np.random.permutation(49))
             parent_f.append(problem(parent[i]))
 
         while problem.state.evaluations < budget:
+
+            mutation_rate = get_mutation_rate(mutation_rate, current_iter, decay)
+
             offspring = mating_seletion(parent,parent_f)
             # print ( "budget ", budget)
             # print ( "problem.state.evaluations ", problem.state.evaluations)
@@ -134,6 +143,7 @@ def studentnumber1_studentnumber2_GA(problem: ioh.problem.PBO, pop_size, mutatio
             parent_f.append(problem(parent[i]))
             
         while problem.state.evaluations < budget:
+            mutation_rate = get_mutation_rate(mutation_rate, current_iter, decay)
             offspring = mating_seletion(parent, parent_f)
 
             for i in range(0, pop_size - (pop_size % 2), 2):
@@ -179,13 +189,13 @@ if __name__ == "__main__":
     # this how you run your algorithm with 20 repetitions/independent run
     # create the LABS problem and the data logger
     
-    pop_size, mutation_rate, crossover_rate = 10, 0.1, 0.5
-    
+    pop_size, mutation_rate, crossover_rate = 50, 0.05, 0.9
+    decay = 0.95
     
     F18, _logger = create_problem(dimension=50, fid=18)
     print("F18")
     for run in range(10): 
-        studentnumber1_studentnumber2_GA(F18, pop_size, mutation_rate, crossover_rate)
+        studentnumber1_studentnumber2_GA(F18, pop_size, mutation_rate, crossover_rate, decay)
         F18.reset() # it is necessary to reset the problem after each independent run
     _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
 
@@ -193,6 +203,6 @@ if __name__ == "__main__":
     F23, _logger = create_problem(dimension=49, fid=23)
     print("F23")
     for run in range(10): 
-        studentnumber1_studentnumber2_GA(F23, pop_size, mutation_rate, crossover_rate)
+        studentnumber1_studentnumber2_GA(F23, pop_size, mutation_rate, crossover_rate, decay)
         F23.reset()
     _logger.close()
