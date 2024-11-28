@@ -189,8 +189,8 @@ if __name__ == "__main__":
     # this how you run your algorithm with 20 repetitions/independent run
     # create the LABS problem and the data logger
     
-    pop_size, mutation_rate, crossover_rate = 40, 0.08, 0.7
-    decay = 0.95
+    pop_size, mutation_rate, crossover_rate = 20, 0.01, 0.9
+    decay = 0.885
     
     F18, _logger = create_problem(dimension=50, fid=18)
     print("F18")

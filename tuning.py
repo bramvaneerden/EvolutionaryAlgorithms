@@ -7,81 +7,99 @@ import numpy as np
 from ioh import get_problem, logger, ProblemClass
 from GA import studentnumber1_studentnumber2_GA, create_problem
 
-budget = 1000000
 
 # To make your results reproducible (not required by the assignment), you could set the random seed by
 np.random.seed(42)
 
-def tune_hyperparameters(n_trials: int = 2, evaluations_per_trial: int = 1000) -> tuple[int, float, float, float]:
+FINAL_BUDGET = 5000
+TUNING_BUDGET = 1000000
 
-    hyperparameter_space = {
-        "population_size": [20, 40, 80],
-        "mutation_rate": [0.02, 0.05, 0.08],
-        "crossover_rate": [0.5, 0.7, 0.9],
-        "decay": [0.85, 0.9, 0.95]
+def evaluate_params(pop_size, mut_rate, cross_rate, decay, n_trials=5):
+    f18_scores = []
+    f23_scores = []
+    
+    for _ in range(n_trials):
+        # F18 - LABS
+        F18, _ = create_problem(dimension=50, fid=18)
+        f18_result, _ = studentnumber1_studentnumber2_GA(
+            F18, pop_size, mut_rate, cross_rate, decay
+        )
+        f18_scores.append(f18_result)
+        
+        # F23 - N-Queens
+        F23, _ = create_problem(dimension=49, fid=23)
+        f23_result, _ = studentnumber1_studentnumber2_GA(
+            F23, pop_size, mut_rate, cross_rate, decay
+        )
+        f23_scores.append(f23_result)
+    
+    return np.mean(f18_scores), np.std(f18_scores), np.mean(f23_scores), np.std(f23_scores)
+
+def tune_hyperparameters():
+    param_ranges = {
+        'population_size': np.linspace(20, 100, 5, dtype=int),
+        'mutation_rate': np.linspace(0.01, 0.1, 5),
+        'crossover_rate': np.linspace(0.5, 0.9, 5),
+        'decay': np.linspace(0.85, 0.99, 5)
     }
     
     best_score = float('-inf')
     best_params = None
+    evaluations_used = 0
     
-    total_configs = (len(hyperparameter_space['population_size']) * 
-                    len(hyperparameter_space['mutation_rate']) * 
-                    len(hyperparameter_space['crossover_rate']) *
-                    len(hyperparameter_space['decay']))
-                    
-    print(f"Total configurations to test: {total_configs}")
-    print(f"Trials per configuration: {n_trials}")
-    
-    config_counter = 0
-    
-    for pop_size in hyperparameter_space['population_size']:
-        for mut_rate in hyperparameter_space['mutation_rate']:
-            for cross_rate in hyperparameter_space['crossover_rate']:
-                for decay in hyperparameter_space['decay']:
-                    config_counter += 1
-                    print(f"\nTesting configuration {config_counter}/{total_configs}")
-                    print(f"Parameters: pop={pop_size}, mut={mut_rate}, cross={cross_rate}, decay={decay}")
-                    
-                    f18_scores = []
-                    f23_scores = []
-                    
-                    for trial in range(n_trials):
-                        print(f"  Trial {trial + 1}/{n_trials}")
+    # phase 1: broad search 
+    for pop_size in param_ranges['population_size']:
+        for mut_rate in param_ranges['mutation_rate']:
+            for cross_rate in param_ranges['crossover_rate']:
+                for decay in param_ranges['decay']:
+                    if evaluations_used + (FINAL_BUDGET * 2 * 3) > TUNING_BUDGET:
+                        break
                         
-                        #F18
-                        F18, _ = create_problem(dimension=50, fid=18)
-                        f18_result, _ = studentnumber1_studentnumber2_GA(
-                            F18, pop_size, mut_rate, cross_rate, decay
-                        )
-                        f18_scores.append(f18_result)
-                        
-                        #F23
-                        F23, _ = create_problem(dimension=49, fid=23)
-                        f23_result, _ = studentnumber1_studentnumber2_GA(
-                            F23, pop_size, mut_rate, cross_rate, decay
-                        )
-                        f23_scores.append(f23_result)
+                    f18_mean, f18_std, f23_mean, f23_std = evaluate_params(
+                        pop_size, mut_rate, cross_rate, decay, n_trials=3
+                    )
                     
-                    avg_f18 = np.mean(f18_scores)
-                    avg_f23 = np.mean(f23_scores)
-                    
-                    # combined
-                    normalized_score = (avg_f18 / 10) + (avg_f23 / 7)
-                    
-                    print(f"  Results - F18 avg: {avg_f18:.2f}, F23 avg: {avg_f23:.2f}")
-                    print(f"  Combined score: {normalized_score:.4f}")
+                    # normalize scores
+                    normalized_score = (f18_mean / 10 - f18_std/20) + (f23_mean / 7 - f23_std/14)
+                    evaluations_used += FINAL_BUDGET * 2 * 3
                     
                     if normalized_score > best_score:
                         best_score = normalized_score
                         best_params = (pop_size, mut_rate, cross_rate, decay)
-                        print(f"  New best parameters found! Score: {best_score:.4f}")
     
-    if best_params is None:
-        return (100, 0.05, 0.7, 0.975)          
+    # phase 2: local search around best parameters
+    if best_params:
+        pop_size, mut_rate, cross_rate, decay = best_params
+        local_ranges = {
+            'population_size': np.array([max(20, pop_size-10), pop_size, min(100, pop_size+10)]),
+            'mutation_rate': np.array([max(0.01, mut_rate-0.01), mut_rate, min(0.1, mut_rate+0.01)]),
+            'crossover_rate': np.array([max(0.5, cross_rate-0.05), cross_rate, min(0.9, cross_rate+0.05)]),
+            'decay': np.array([max(0.85, decay-0.02), decay, min(0.99, decay+0.02)])
+        }
+        
+        for pop_size in local_ranges['population_size']:
+            for mut_rate in local_ranges['mutation_rate']:
+                for cross_rate in local_ranges['crossover_rate']:
+                    for decay in local_ranges['decay']:
+                        if evaluations_used + (FINAL_BUDGET * 2 * 5) > TUNING_BUDGET:
+                            break
+                            
+                        f18_mean, f18_std, f23_mean, f23_std = evaluate_params(
+                            pop_size, mut_rate, cross_rate, decay, n_trials=5
+                        )
+                        
+                        normalized_score = (f18_mean / 10 - f18_std/20) + (f23_mean / 7 - f23_std/14)
+                        evaluations_used += FINAL_BUDGET * 2 * 5
+                        
+                        if normalized_score > best_score:
+                            best_score = normalized_score
+                            best_params = (pop_size, mut_rate, cross_rate, decay)
+    
+    print(f"Total evaluations used: {evaluations_used}")
     return best_params
 
 if __name__ == "__main__":
-    print("Starting hyperparameter tuning...")
+    print("Starting improved hyperparameter tuning...")
     pop_size, mut_rate, cross_rate, decay = tune_hyperparameters()
     print("\nBest parameters found:")
     print(f"Population size: {pop_size}")
