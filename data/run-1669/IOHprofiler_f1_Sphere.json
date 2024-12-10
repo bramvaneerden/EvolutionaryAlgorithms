@@ -1,0 +1,17 @@
+{
+	"version": "0.3.17", 
+	"suite": "unknown_suite", 
+	"function_id": 1, 
+	"function_name": "Sphere", 
+	"maximization": false, 
+	"algorithm": {"name": "evolution strategy", "info": "The lab session of the evolutionary algorithm course in LIACS"},
+	"attributes": ["evaluations", "raw_y"],
+	"scenarios": [
+		{"dimension": 5,
+		"path": "data_f1_Sphere/IOHprofiler_f1_DIM5.dat",
+		"runs": [
+			{"instance": 1, "evals": 50000, "best": {"evals": 2738, "y": 5.043835655604923e-11, "x": [-3.5429121279601216e-06, 3.893859880329512e-06, -2.4402776804111833e-06, 4.030125683278984e-06, 7.260284164030133e-07]}},
+			{"instance": 1, "evals": 20610, "best": {"evals": 2831, "y": 2.9067220068839984e-11, "x": [-1.3615851542176585e-07, -2.135551711809942e-06, 4.139676709197737e-06, -1.1762508365903822e-06, -2.442869322425981e-06]}}
+		]}
+	]
+}
